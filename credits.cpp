@@ -6,13 +6,13 @@ void credits() {
 	while (true) {
 		adjustConsole();
 
-		drawCredits();
-
 		std::string input = getInput();
 
 		if (input == "exit") {
-			return clearConsole();
+			return;
 		}
+
+		drawCredits();
 
 		delay();
 	}

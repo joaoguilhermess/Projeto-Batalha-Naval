@@ -8,10 +8,6 @@ int main() {
 	while (true) {
 		adjustConsole();
 
-		int row = 0;
-
-		drawTitle(row);
-
 		std::string input = getInput();
 
 		if (input == "left") {
@@ -25,14 +21,30 @@ int main() {
 		} else if (input == "enter") {
 			if (selected == 0) {
 				rules();
+
+				setColor(TITLE_COLOR);
+
+				clearConsole();
 			} else if (selected == 1) {
 				game();
+
+				setColor(TITLE_COLOR);
+
+				clearConsole();
 			} else if (selected == 2) {
 				credits();
+
+				setColor(TITLE_COLOR);
+
+				clearConsole();
 			}
 		} else if (input == "exit") {
 			break;
 		}
+
+		int row = 0;
+
+		drawTitle(row);
 
 		drawButtons(row, selected);
 
@@ -42,7 +54,7 @@ int main() {
 	return 0;
 }
 
-void drawTitle(int &row) {
+void drawTitle(int& row) {
 	setColor(TITLE_COLOR);
 
 	centerText(" ███████████             █████              ████  █████               ", row, 0); row += 1;
@@ -66,7 +78,7 @@ void drawTitle(int &row) {
 	centerText("░░░░░    ░░░░░  ░░░░░░░░    ░░░░░     ░░░░░░░░ ░░░░░ ", row, 0); row += 1;
 }
 
-void drawButtons(int &row, int selected) {
+void drawButtons(int& row, int selected) {
 	int middle = row + ((ROWS - 1) - row) / 2;
 
 	int offset = getColumns() / 4;

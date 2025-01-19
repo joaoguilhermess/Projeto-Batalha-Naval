@@ -89,8 +89,20 @@ void setFullscreen() {
 	}
 }
 
+void delay(long long elapsed) {
+	int interval = 1000 / FPS;
+
+	interval -= elapsed;
+
+	if (interval < 0) {
+		interval = 0;
+	}
+
+	Sleep(interval);
+}
+
 void delay() {
-	 Sleep(1000 / FPS);
+	Sleep(1000 / FPS);
 }
 
 int getRows() {
@@ -136,7 +148,7 @@ int getLength(std::string text) {
 }
 
 void clearConsole() {
-	int length = (ROWS * getColumns()) - 1;
+	int length = ROWS * getColumns();
 
 	std::string buffer;
 

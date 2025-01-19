@@ -6,6 +6,8 @@
 	#include <thread>
 	#include <string>
 	#include <vector>
+	#include <array>
+	#include <chrono>
 	#include "values.h"
 	#include "conio.h"
 
@@ -19,6 +21,8 @@
 	void setCursor(int y, int x);
 	
 	void setFullscreen();
+
+	void delay(long long elapsed);
 	
 	void delay();
 	

@@ -6,13 +6,13 @@ void rules() {
 	while (true) {
 		adjustConsole();
 
-		drawRules();
-
 		std::string input = getInput();
 
 		if (input == "exit") {
-			return clearConsole();
+			return;
 		}
+
+		drawRules();
 
 		delay();
 	}

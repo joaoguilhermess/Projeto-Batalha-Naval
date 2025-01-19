@@ -3,9 +3,32 @@
 
 	#include "console.h"
 
+	struct Ship {
+		bool isVisible;
+		int y;
+		int x;
+		int size;
+		bool isVertical;
+		bool isSunked;
+	};
+
+	struct Cell {
+		bool isWater;
+		bool hasBomb;
+		bool hasShip;
+		int shipIndex;
+		bool isVertical;
+	};
+
 	void game();
 
-	void drawGrid(int row, int offset);
+	std::array<Ship, SHIPS> createShips();
 
-	void drawBoat(int row, int offset, int y, int x, int size, int vertical);
+	void clearGrid(std::array<std::array<Cell, GRID>, GRID>& grid);
+
+	bool verifyCollision(std::array<Ship, SHIPS>& ships);
+
+	void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>, GRID>& grid);
+
+	void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset);
 #endif

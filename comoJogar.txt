@@ -1,0 +1,7 @@
+Cada Jogador coloca seus Navios nos quadrados, sem mostrar seu jogo ao outro Jogador.
+
+Cada Jogador coloca uma Bomba no quadrado do tabuleiro do outro Jogador.
+
+Para um barco ser destruido devem ser jogadas Bombas em todas as posições do tabuleiro ocupadas pelo Navio.
+
+Vence quem afundar todos os navios do adversário primeiro!

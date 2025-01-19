@@ -8,9 +8,9 @@
 
 	void splash();
 	
-	void drawTitle(int &row);
+	void drawTitle(int& row);
 
-	void drawButtons(int &row, int selected);
+	void drawButtons(int& row, int selected);
 
 	void drawButton(std::string text, int length, int row, int offset, bool selected);
 	void drawButton(std::string text, int row, int offset, bool selected);

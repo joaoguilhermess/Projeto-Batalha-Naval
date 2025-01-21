@@ -79,13 +79,17 @@ void setFullscreen() {
 	if (!fullscreen) {
 		fullscreen = true;
 
-		GetSystemMetrics(SM_CYSCREEN);
+		HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
-		HWND window = GetConsoleWindow();
+		SetConsoleDisplayMode(handle, CONSOLE_FULLSCREEN_MODE, 0);
 
-		ShowWindow(window, SW_MAXIMIZE);
+		// GetSystemMetrics(SM_CYSCREEN);
 
-		SendMessage(window, WM_SYSKEYDOWN, VK_RETURN, 0x20000000);
+		// HWND window = GetConsoleWindow();
+
+		// ShowWindow(window, SW_MAXIMIZE);
+
+		// SendMessage(window, WM_SYSKEYDOWN, VK_RETURN, 0x20000000);
 	}
 }
 

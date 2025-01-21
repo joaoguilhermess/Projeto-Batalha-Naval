@@ -113,29 +113,32 @@ void game() {
 	Player player1;
 	Player player2;
 
+	player1.name = "Jogador 1";
+	player2.name = "Jogador 2";
+
 	player1.ships = createShips();
 	player2.ships = createShips();
 
 	std::array<std::array<Cell, GRID>, GRID> grid;
 
-	int row = (ROWS / 2);
+	int middle = (ROWS / 2);
 
 	int offset = getColumns() / 4;
 
 	bool running = true;
 
-	moveShips(player1, grid, row, offset, running);
+	moveShips(player1, grid, middle, offset, running);
 
-	moveShips(player2, grid, row, offset, running);
+	moveShips(player2, grid, middle, offset, running);
 
-	Player winner;
+	// Player winner;
 
-	while (running) {
-		playTurn(player1, player2, grid, row, offset, running, winner);
-		playTurn(player2, player1, grid, row, offset, running, winner);
-	}
+	// while (running) {
+	// 	playTurn(player1, player2, grid, row, offset, running, winner);
+	// 	playTurn(player2, player1, grid, row, offset, running, winner);
+	// }
 
-	showWinner(winner);
+	// showWinner(winner);
 }
 
 void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool& running, Player& winner) {
@@ -188,9 +191,11 @@ void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>,
 
 		clearGrid(grid);
 
-		setBombs();
+		// setBombs(other.bombs, grid);
 
-		setShips();
+		bool asd = false;
+
+		setShips(current.ships, grid, asd);
 
 		drawGrid(grid, row, -offset);
 	}
@@ -201,13 +206,17 @@ void moveShips(Player& current, std::array<std::array<Cell, GRID>, GRID>& grid, 
 		return;
 	}
 
+	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+
+	centerText("Vez do: " + current.name, 1, 0);
+
 	int selected = 0;
 
 	bool isRotating = true;
 
 	bool collided = false;
 
-	while (true) {
+	while (selected < SHIPS) {
 		Ship& ship = current.ships[selected];
 
 		ship.isVisible = true;
@@ -260,19 +269,17 @@ void moveShips(Player& current, std::array<std::array<Cell, GRID>, GRID>& grid, 
 					}
 				} else if (input == "enter") {
 					if (!collided) {
-						if (selected < SHIPS) {
-							selected += 1;
+						selected += 1;
 
-							isRotating = false;
-						} else {
-							return;
-						}
+						isRotating = true;
 					}
 				}
 			}
 		}
 
 		clearGrid(grid);
+
+		drawGrid(grid, row, offset);
 
 		setShips(current.ships, grid, collided);
 
@@ -295,6 +302,7 @@ std::array<Ship, SHIPS> createShips() {
 
 		ship.isVertical = false;
 		ship.isSunked = false;
+		ship.isSelected = false;
 	}
 
 	return ships;
@@ -313,6 +321,19 @@ void clearGrid(std::array<std::array<Cell, GRID>, GRID>& grid) {
 			cell.shipIndex = 0;
 			cell.isVertical = false;
 		}
+	}
+}
+
+void setBombs(std::vector<Bomb>& bombs, std::array<std::array<Cell, GRID>, GRID>& grid) {
+	int length = bombs.size();
+
+	for (int b = 0; b < length; b++) {
+		Bomb& bomb = bombs[b];
+
+		Cell& cell = grid[bomb.y][bomb.x];
+
+		cell.isWater = false;
+		cell.hasBomb = true;
 	}
 }
 
@@ -350,7 +371,15 @@ void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>,
 void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset) {
 	row -= GRID;
 
+	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+
+	centerText(" A   B   C   D   E   F   G   H   I   J  ", row - 1, offset);
+
 	offset -= (GRID - 1) * 2;
+
+	for (int r = 0; r < GRID; r++) {
+		centerText(std::to_string(r + 1), row + (r * 2), offset - 4);
+	}
 
 	for (int r = 0; r < GRID; r++) {
 		for (int c = 0; c < GRID; c++) {

@@ -255,11 +255,11 @@ std::string getInput() {
 		}
 
 		if (c == 72 || c == 87 || c == 119) {
-			return "top";
+			return "up";
 		}
 
 		if (c == 80 || c == 83 || c == 115) {
-			return "bottom";
+			return "down";
 		}
 
 		if (c == 13 || c == 32) {

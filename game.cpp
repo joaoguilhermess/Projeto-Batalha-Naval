@@ -1,12 +1,12 @@
 #include "game.h"
 
-void game() {
+void game2() {
 	clearConsole();
 
-	std::array<Ship, SHIPS> ships = createShips();
+	std::array<Ship, SHIPS> leftShips = createShips();
+	std::array<Ship, SHIPS> rightShips = createShips();
 
-	std::array<std::array<Cell, GRID>, GRID> leftGrid;
-	std::array<std::array<Cell, GRID>, GRID> rightGrid;
+	std::array<std::array<Cell, GRID>, GRID> grid;
 
 	int selectedShip = 0;
 
@@ -20,7 +20,7 @@ void game() {
 
 		adjustConsole();
 
-		Ship& ship = ships[selectedShip];
+		Ship& ship = leftShips[selectedShip];
 
 		ship.isVisible = true;
 
@@ -85,17 +85,15 @@ void game() {
 			}
 		}
 
-		clearGrid(leftGrid);
-		clearGrid(rightGrid);
+		clearGrid(grid);
 
-		setShips(ships, leftGrid, collided);
+		setShips(leftShips, grid, collided);
 
 		int offset = getColumns() / 4;
 
 		int row = (ROWS / 2);
 
-		drawGrid(leftGrid, row, -offset);
-		drawGrid(rightGrid, row, offset);
+		drawGrid(grid, row, -offset);
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 
@@ -104,6 +102,181 @@ void game() {
 		setColor(0);
 
 		delay(duration.count());
+	}
+}
+
+void game() {
+	clearConsole();
+
+	adjustConsole();
+
+	Player player1;
+	Player player2;
+
+	player1.ships = createShips();
+	player2.ships = createShips();
+
+	std::array<std::array<Cell, GRID>, GRID> grid;
+
+	int row = (ROWS / 2);
+
+	int offset = getColumns() / 4;
+
+	bool running = true;
+
+	moveShips(player1, grid, row, offset, running);
+
+	moveShips(player2, grid, row, offset, running);
+
+	Player winner;
+
+	while (running) {
+		playTurn(player1, player2, grid, row, offset, running, winner);
+		playTurn(player2, player1, grid, row, offset, running, winner);
+	}
+
+	showWinner(winner);
+}
+
+void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool& running, Player& winner) {
+	if (!running) {
+		return;
+	}
+
+	Bomb bomb;
+
+	bomb.y = 0;
+	bomb.x = 0;
+	bomb.isSunked = false;
+
+	bool collided = false;
+
+	while (true) {
+		while (true) {
+			std::string input = getInput();
+
+			if (input == "") {
+				break;
+			} else if (input == "exit") {
+				running = false;
+
+				return;
+			} else if (input == "up") {
+				if (bomb.y > 0) {
+					bomb.y -= 1;
+				}
+			} else if (input == "down") {
+				if (bomb.y < GRID - 1) {
+					bomb.y += 1;
+				}
+			} else if (input == "left") {
+				if (bomb.x > 0) {
+					bomb.x -= 1;
+				}
+			} else if (input == "right") {
+				if (bomb.x < GRID - 1) {
+					bomb.x += 1;
+				}
+			} else if (input == "enter") {
+				if (!collided) {
+					current.bombs.push_back(bomb);
+
+					return;
+				}
+			}
+		}
+
+		clearGrid(grid);
+
+		setBombs();
+
+		setShips();
+
+		drawGrid(grid, row, -offset);
+	}
+}
+
+void moveShips(Player& current, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool& running) {
+	if (!running) {
+		return;
+	}
+
+	int selected = 0;
+
+	bool isRotating = true;
+
+	bool collided = false;
+
+	while (true) {
+		Ship& ship = current.ships[selected];
+
+		ship.isVisible = true;
+
+		while (true) {
+			std::string input = getInput();
+
+			if (input == "") {
+				break;
+			} else if (input == "exit") {
+				running = false;
+
+				return;
+			} else if (isRotating) {
+				if (input == "left") {
+					ship.isVertical = true;
+				} else if (input == "right") {
+					ship.isVertical = false;
+				} else if (input == "enter") {
+					isRotating = false;
+				}
+			} else {
+				if (input == "up") {
+					if (ship.y > 0) {
+						ship.y -= 1;
+					}
+				} else if (input == "down") {
+					int size = 1;
+
+					if (ship.isVertical) {
+						size = ship.size;
+					}
+
+					if (ship.y < GRID - size) {
+						ship.y += 1;
+					}
+				} else if (input == "left") {
+					if (ship.x > 0) {
+						ship.x -= 1;
+					}
+				} else if (input == "right") {
+					int size = 1;
+
+					if (!ship.isVertical) {
+						size = ship.size;
+					}
+
+					if (ship.x < GRID - size) {
+						ship.x += 1;
+					}
+				} else if (input == "enter") {
+					if (!collided) {
+						if (selected < SHIPS) {
+							selected += 1;
+
+							isRotating = false;
+						} else {
+							return;
+						}
+					}
+				}
+			}
+		}
+
+		clearGrid(grid);
+
+		setShips(current.ships, grid, collided);
+
+		drawGrid(grid, row, -offset);
 	}
 }
 

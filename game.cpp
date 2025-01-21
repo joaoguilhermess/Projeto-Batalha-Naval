@@ -13,6 +13,8 @@ void game() {
 	bool isRotating = true;
 	bool isMovingShip = true;
 
+	bool collided = false;
+
 	while (true) {
 		std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 
@@ -69,13 +71,15 @@ void game() {
 						}
 					}
 				} else if (input == "enter") {
-					if (selectedShip < SHIPS) {
-						selectedShip += 1;
+					if (!collided) {
+						if (selectedShip < SHIPS) {
+							selectedShip += 1;
 
-						isRotating = true;
-						isMovingShip = true;
-					} else {
-						isMovingShip = false;
+							isRotating = true;
+							isMovingShip = true;
+						} else {
+							isMovingShip = false;
+						}
 					}
 				}
 			}
@@ -84,7 +88,7 @@ void game() {
 		clearGrid(leftGrid);
 		clearGrid(rightGrid);
 
-		setShips(ships, leftGrid);
+		setShips(ships, leftGrid, collided);
 
 		int offset = getColumns() / 4;
 
@@ -96,6 +100,8 @@ void game() {
 		std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 
 		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+		setColor(0);
 
 		delay(duration.count());
 	}
@@ -129,19 +135,17 @@ void clearGrid(std::array<std::array<Cell, GRID>, GRID>& grid) {
 			cell.isWater = true;
 			cell.hasShip = false;
 			cell.hasBomb = false;
+			cell.isSelected = false;
+			cell.isCollided = false;
 			cell.shipIndex = 0;
 			cell.isVertical = false;
 		}
 	}
 }
 
-bool verifyCollision(std::array<Ship, SHIPS>& ships) {
-	for (int s = 0; s < SHIPS; s++) {
-		
-	}
-}
+void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>, GRID>& grid, bool& collided) {
+	collided = false;
 
-void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>, GRID>& grid) {
 	for (int s = 0; s < SHIPS; s++) {
 		Ship& ship = ships[s];
 
@@ -153,6 +157,12 @@ void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>,
 					cell = &grid[ship.y + i][ship.x];
 				} else {
 					cell = &grid[ship.y][ship.x + i];
+				}
+
+				if (cell->hasShip) {
+					collided = true;
+
+					cell->isCollided = true;
 				}
 
 				cell->isWater = false;
@@ -179,7 +189,11 @@ void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offse
 				centerText("    ", row + (r * 2), offset + (c * 4));
 				centerText("    ", row + (r * 2) + 1, offset + (c * 4));
 			} else if (cell.hasShip) {
-				setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY | FOREGROUND_INTENSITY);
+				if (cell.isCollided) {
+					setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_INTENSITY);
+				} else {
+					setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY | FOREGROUND_INTENSITY);
+				}
 
 				centerText("████", row + (r * 2), offset + (c * 4));
 				centerText("████", row + (r * 2) + 1, offset + (c * 4));

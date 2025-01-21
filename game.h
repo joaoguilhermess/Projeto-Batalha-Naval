@@ -16,6 +16,8 @@
 		bool isWater;
 		bool hasBomb;
 		bool hasShip;
+		bool isSelected;
+		bool isCollided;
 		int shipIndex;
 		bool isVertical;
 	};
@@ -26,9 +28,7 @@
 
 	void clearGrid(std::array<std::array<Cell, GRID>, GRID>& grid);
 
-	bool verifyCollision(std::array<Ship, SHIPS>& ships);
-
-	void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>, GRID>& grid);
+	void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>, GRID>& grid, bool& collided);
 
 	void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset);
 #endif

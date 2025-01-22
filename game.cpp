@@ -93,7 +93,7 @@ void game2() {
 
 		int row = (ROWS / 2);
 
-		drawGrid(grid, row, -offset);
+		drawGrid(grid, row, -offset, true);
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 
@@ -129,16 +129,22 @@ void game() {
 
 	moveShips(player1, grid, middle, offset, running);
 
-	moveShips(player2, grid, middle, offset, running);
+	moveShips(player2, grid, middle, -offset, running);
 
-	// Player winner;
+	Player winner;
 
-	// while (running) {
-	// 	playTurn(player1, player2, grid, row, offset, running, winner);
-	// 	playTurn(player2, player1, grid, row, offset, running, winner);
-	// }
+	while (running) {
+		playTurn(player1, player2, grid, middle, offset, running, winner);
+		// playTurn(player2, player1, grid, middle, offset, running, winner);
+	}
 
 	// showWinner(winner);
+}
+
+void setTitle(std::string title) {
+	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+
+	centerText(title, 1, 0);
 }
 
 void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool& running, Player& winner) {
@@ -146,13 +152,17 @@ void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>,
 		return;
 	}
 
-	Bomb bomb;
+	setTitle("O " + current.name + " Deve Posicionar Uma Bomba no Tabuleiro do " + other.name + ".");
 
-	bomb.y = 0;
-	bomb.x = 0;
-	bomb.isSunked = false;
+	Bomb temp;
 
-	bool collided = false;
+	temp.y = 0;
+	temp.x = 0;
+	temp.isSunked = false;
+
+	current.bombs.push_back(temp);
+
+	Bomb& bomb = current.bombs[current.bombs.size() - 1];
 
 	while (true) {
 		while (true) {
@@ -181,23 +191,24 @@ void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>,
 					bomb.x += 1;
 				}
 			} else if (input == "enter") {
-				if (!collided) {
-					current.bombs.push_back(bomb);
-
-					return;
-				}
 			}
 		}
 
+		bool collided = false;
+
 		clearGrid(grid);
 
-		// setBombs(other.bombs, grid);
+		setShips(current.ships, grid, collided);
 
-		bool asd = false;
+		drawGrid(grid, row, -offset, true);
 
-		setShips(current.ships, grid, asd);
+		clearGrid(grid);
 
-		drawGrid(grid, row, -offset);
+		setBombs(current.bombs, grid);
+
+		setShips(other.ships, grid, collided);
+
+		drawGrid(grid, row, offset, true);
 	}
 }
 
@@ -206,9 +217,7 @@ void moveShips(Player& current, std::array<std::array<Cell, GRID>, GRID>& grid, 
 		return;
 	}
 
-	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-
-	centerText("Vez do: " + current.name, 1, 0);
+	setTitle("O " + current.name + " Deve Posicionar Seus Navios.");
 
 	int selected = 0;
 
@@ -279,11 +288,11 @@ void moveShips(Player& current, std::array<std::array<Cell, GRID>, GRID>& grid, 
 
 		clearGrid(grid);
 
-		drawGrid(grid, row, offset);
+		drawGrid(grid, row, offset, true);
 
 		setShips(current.ships, grid, collided);
 
-		drawGrid(grid, row, -offset);
+		drawGrid(grid, row, -offset, true);
 	}
 }
 
@@ -357,6 +366,8 @@ void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>,
 					collided = true;
 
 					cell->isCollided = true;
+				} else if (cell->hasBomb) {
+
 				}
 
 				cell->isWater = false;
@@ -368,7 +379,7 @@ void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>,
 	}
 }
 
-void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset) {
+void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool drawShips) {
 	row -= GRID;
 
 	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
@@ -393,60 +404,32 @@ void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offse
 			} else if (cell.hasShip) {
 				if (cell.isCollided) {
 					setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_INTENSITY);
+				} else if (cell.hasBomb) {
+					setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY);
 				} else {
 					setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY | FOREGROUND_INTENSITY);
 				}
 
-				centerText("████", row + (r * 2), offset + (c * 4));
-				centerText("████", row + (r * 2) + 1, offset + (c * 4));
+				if (drawShips || cell.hasBomb) {
+					if (cell.shipIndex == 0) {
+						if (cell.isVertical) {
+							centerText("████", row + (r * 2), offset + (c * 4));
+							centerText("████", row + (r * 2) + 1, offset + (c * 4));
+						} else {
+							centerText("████", row + (r * 2), offset + (c * 4));
+							centerText("████", row + (r * 2) + 1, offset + (c * 4));
+						}
+					} else {
+						centerText("████", row + (r * 2), offset + (c * 4));
+						centerText("████", row + (r * 2) + 1, offset + (c * 4));
+					}
+				}
+			} else if (cell.hasBomb) {
+				setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+
+				centerText(" ▄▄ ", row + (r * 2), offset + (c * 4));
+				centerText(" ▀▀ ", row + (r * 2) + 1, offset + (c * 4));
 			}
 		}
 	}
 }
-
-// void drawBoat(int row, int offset, int y, int x, int size, int vertical) {
-// 	row += -GRID + (y - 1);
-
-// 	offset += -(GRID * 2) + 2 + ((x - 1) * 4);
-
-// 	setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-	
-// 	for (int i = 0; i < size; i++) {
-// 		if (i == 0) {
-// 			if (vertical) {
-// 				centerText("▄██▄", (row * 2) + (i * 2), offset);	
-// 				centerText("████", (row * 2) + (i * 2) + 1, offset);
-// 			} else {
-// 				centerText("▄███", (row * 2), offset + (i * 2));
-// 				centerText("▀███", (row * 2) + 1, offset + (i * 2));
-// 			}
-// 		} else if (i == size - 1) {
-// 			if (vertical) {
-// 				centerText("████", (row * 2) + (i * 2), offset);
-// 				centerText("▀██▀", (row * 2) + (i * 2) + 1, offset);
-// 			} else {
-// 				centerText("███▄", (row * 2), offset + (i * 2));
-// 				centerText("███▀", (row * 2) + 1, offset + (i * 2));
-// 			}
-// 		} else {
-// 			if (vertical) {
-// 				centerText("████", (row * 2) + (i * 2), offset);
-// 				centerText("████", (row * 2) + (i * 2) + 1, offset);
-// 			} else {
-// 				centerText("████", (row * 2), offset + (i * 2));
-// 				centerText("████", (row * 2) + 1, offset + (i * 2));
-// 			}
-// 		}
-// 	}
-// }
-
-// void drawBomb(int row, int offset, int y, int x) {
-// 	setColor(BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-
-// 	row += -GRID + (y - 1);
-
-// 	offset += -(GRID * 2) + 2 + ((x - 1) * 4);
-
-// 	centerText(" ▄▄ ", row, offset);
-// 	centerText(" ▀▀ ", row + 1, offset);
-// }

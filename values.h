@@ -7,7 +7,7 @@
 
 	#define GRID 10
 
-	#define SHIPS 5
+	#define SHIPS 2
 
 	#define BACKGROUND_COLOR 0
 

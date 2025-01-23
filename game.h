@@ -31,6 +31,7 @@
 		bool hasShip;
 		bool isSelected;
 		bool isCollided;
+		int shipSize;
 		int shipIndex;
 		bool isVertical;
 	};
@@ -39,7 +40,9 @@
 
 	void setTitle(std::string title);
 
-	void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool& running, Player& winner);
+	void showWinner(Player& player1, Player& player2, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, Player& winner);
+
+	void playTurn(Player& current, Player& other, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool& running, int shipCells, Player& winner);
 
 	void moveShips(Player& current, std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool& running);
 
@@ -47,9 +50,9 @@
 
 	void clearGrid(std::array<std::array<Cell, GRID>, GRID>& grid);
 	
-	void setBombs(std::vector<Bomb>& bombs, std::array<std::array<Cell, GRID>, GRID>& grid);
+	void setBombs(std::vector<Bomb>& bombs, std::array<std::array<Cell, GRID>, GRID>& grid, bool& collided);
 
-	void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>, GRID>& grid, bool& collided);
+	void setShips(std::array<Ship, SHIPS>& ships, std::array<std::array<Cell, GRID>, GRID>& grid, int& collided);
 
-	void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset, bool drawShips);
+	void drawGrid(std::array<std::array<Cell, GRID>, GRID>& grid, int row, int offset);
 #endif

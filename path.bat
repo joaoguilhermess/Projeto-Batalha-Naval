@@ -1,2 +1,0 @@
-@echo off
-set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Users\202400007730\AppData\Local\Microsoft\WindowsApps;C:\Users\202400007730\Desktop\Temp\w64devkit\bin;

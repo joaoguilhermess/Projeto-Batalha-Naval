@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <array>
@@ -62,12 +64,12 @@ string pegarInput() {
 void moverCursor(int linha, int coluna) {
 	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	COORD posição;
+	COORD posicao;
 
-	posição.Y = linha;
-	posição.X = coluna;
+	posicao.Y = linha;
+	posicao.X = coluna;
 
-	SetConsoleCursorPosition(console, posição);
+	SetConsoleCursorPosition(console, posicao);
 
 	CONSOLE_CURSOR_INFO info;
 
@@ -107,19 +109,19 @@ int colunasTela() {
 int ultimasLinhas = 0;
 int ultimasColunas = 0;
 
-void limparConsole(bool forçar) {
+void limparConsole(bool forcar) {
 	int linhas = linhasTela();
 	int colunas = colunasTela();
 
 	trocarCor(0);
 
-	if (linhas != ultimasLinhas || colunas != ultimasColunas || forçar) {
+	if (linhas != ultimasLinhas || colunas != ultimasColunas || forcar) {
 		ultimasLinhas = linhas;
 		ultimasColunas = colunas;
 
 		string borracha(linhas * colunas, ' ');
 
-		moverCursor(0, 0);
+		moverCursor(1, 1);
 
 		cout << borracha;
 	}
@@ -188,7 +190,7 @@ void desenharBorda(int altura, int largura, int linha, int coluna) {
 	escreverTextoMeio("╚═" + barra + "═╝", linha, coluna);
 }
 
-void desenharBotão(string texto, bool selecionado, int linha, int coluna) {
+void desenharBotao(string texto, bool selecionado, int linha, int coluna) {
 	if (selecionado) trocarCor(TEXTO_CLARO);
 	else trocarCor(TEXTO_ESCURO);
 
@@ -200,11 +202,11 @@ void desenharBotão(string texto, bool selecionado, int linha, int coluna) {
 	escreverTextoMeio(texto, linha, coluna);
 }
 
-int calcularEspaçamentoVertical(int linhasUsadas, int blocos) {
+int calcularEspacamentoVertical(int linhasUsadas, int blocos) {
 	return (linhasTela() - linhasUsadas) / (blocos + 1);
 }
 
-int calcularEspaçamentoHorizontal(int colunasUsadas, int blocos) {
+int calcularEspacamentoHorizontal(int colunasUsadas, int blocos) {
 	return (colunasTela() - colunasUsadas) / (blocos + 1);
 }
 
@@ -224,13 +226,13 @@ void mostrarRegras() {
 
 		limparConsole(false);
 
-		moverCursor(0, 0);
+		moverCursor(1, 1);
 
 		int alturaTexto = 23;
 
-		int espaçamentoVertical = calcularEspaçamentoVertical(alturaTexto, 1);
+		int espacamentoVertical = calcularEspacamentoVertical(alturaTexto, 1);
 		
-		int linha = espaçamentoVertical;
+		int linha = espacamentoVertical;
 		int colunaMeio = colunasTela() / 2;
 
 		trocarCor(TEXTO);
@@ -259,11 +261,11 @@ void mostrarRegras() {
 			"Para o jogo começar, cada jogador posiciona seus navios em seu respectivo tabuleiro, e assim a",
 			"série de rodadas é iniciada.",
 			"",
-			"Em cada rodada, cada jogador tem um turno para atacar uma coordenada do tabuleiro adversário.",
+			"Em cada rodada, cada jogador tem um turno para atacar uma coordenada do tabuleiro adversario.",
 			"",
 			"Apenas quando todas as coordenadas ocupadas por um navio são atingidas o navio é destruido.",
 			"",
-			"Se todos os navios de um jogador forem destruidos o jogo acaba e o adversário vence.",
+			"Se todos os navios de um jogador forem destruidos o jogo acaba e o adversario vence.",
 			""
 		}, linha, colunaMeio);
 
@@ -291,38 +293,42 @@ struct Jogador {
 	string nome;
 	vector<Navio> navios;
 	vector<Bomba> bombas;
-	string lado;
+	bool ladoEsquerdo;
+	int acertos;
+	int ataques;
+	int partidasVencidas;
+	int partidasJogadas;
 };
 
-struct Célula {
-	bool temÁgua;
+struct Celula {
+	bool temAgua;
 	bool temBomba;
 	bool temNavio;
-	bool temColisão;
+	bool temColisao;
 	bool tamanhoNavio;
-	bool posiçãoNavio;
+	bool posicaoNavio;
 	bool vertical;
 	bool selecionada;
 };
 
-void limparTabuleiro(array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro) {
+void limparTabuleiro(array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro) {
 	for (int l = 0; l < TAMANHO_TABULEIRO; l++) {
 		for (int c = 0; c < TAMANHO_TABULEIRO; c++) {
-			Célula& célula = tabuleiro[l][c];
+			Celula& celula = tabuleiro[l][c];
 
-			célula.temÁgua = true;
-			célula.temBomba = false;
-			célula.temNavio = false;
-			célula.temColisão = false;
-			célula.tamanhoNavio = 0;
-			célula.posiçãoNavio = 0;
-			célula.vertical = false;
-			célula.selecionada = false;
+			celula.temAgua = true;
+			celula.temBomba = false;
+			celula.temNavio = false;
+			celula.temColisao = false;
+			celula.tamanhoNavio = 0;
+			celula.posicaoNavio = 0;
+			celula.vertical = false;
+			celula.selecionada = false;
 		}
 	}
 }
 
-void desenharTabuleiro(array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, int linha, int coluna) {
+void desenharTabuleiro(array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, int linha, int coluna) {
 	trocarCor(TEXTO_CLARO);
 
 	escreverTextoEsquerda("A   B   C   D   E   F   G   H   I   J", linha, coluna + 3);
@@ -337,17 +343,17 @@ void desenharTabuleiro(array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIR
 
 	for (int l = 0; l < TAMANHO_TABULEIRO; l++) {
 		for (int c = 0; c < TAMANHO_TABULEIRO; c++) {
-			Célula& célula = tabuleiro[l][c];
+			Celula& celula = tabuleiro[l][c];
 
 			string parte1;
 			string parte2;
 
-			if (célula.temNavio) {
-				if (célula.temColisão) {
+			if (celula.temNavio) {
+				if (celula.temColisao) {
 					trocarCor(TEXTO_VERMELHO);
-				} else if (célula.selecionada) {
+				} else if (celula.selecionada) {
 					trocarCor(TEXTO_VERDE);
-				} else if (célula.temBomba) {
+				} else if (celula.temBomba) {
 					trocarCor(FUNDO_AZUL);
 				} else {
 					trocarCor(TEXTO_ESCURO);
@@ -355,12 +361,12 @@ void desenharTabuleiro(array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIR
 
 				parte1 = "████";
 				parte2 = "████";
-			} else if (célula.temBomba) {
-				if (célula.temColisão) {
+			} else if (celula.temBomba) {
+				if (celula.temColisao) {
 					trocarCor(TEXTO_VERMELHO);
-				} else if (célula.selecionada) {
+				} else if (celula.selecionada) {
 					trocarCor(TEXTO_VERDE);
-				} else if (célula.temÁgua) {
+				} else if (celula.temAgua) {
 					trocarCor(TEXTO_AZUL_ESCURO);
 				} else {
 					trocarCor(FUNDO_AZUL);
@@ -381,40 +387,50 @@ void desenharTabuleiro(array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIR
 	}
 }
 
-void colocarNavios(vector<Navio>& navios, array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, int& colisõesNavio, bool desenharNavios) {
-	colisõesNavio = 0;
+void colocarNavios(vector<Navio>& navios, array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, int& colisoesNavio, bool desenharNavios) {
+	colisoesNavio = 0;
 
 	for (Navio& navio : navios) {
 		for (int i = 0; i < navio.tamanho; i++) {
-			Célula* célula;
+			Celula* celula;
 
-			if (navio.vertical) célula = &tabuleiro[navio.linha + i][navio.coluna];
-			else célula = &tabuleiro[navio.linha][navio.coluna + i];
+			if (navio.vertical) celula = &tabuleiro[navio.linha + i][navio.coluna];
+			else celula = &tabuleiro[navio.linha][navio.coluna + i];
 
-			if (célula->temNavio || célula->temBomba) colisõesNavio += 1;
+			if (celula->temNavio || celula->temBomba) colisoesNavio += 1;
 
-			if (célula->temNavio) célula->temColisão = true;
+			if (celula->temNavio) celula->temColisao = true;
 
 			if (desenharNavios) {
-				célula->temÁgua = false;
-				célula->temNavio = true;
-				célula->tamanhoNavio = navio.tamanho;
-				célula->posiçãoNavio = i;
-				célula->vertical = navio.vertical;
-				célula->selecionada = navio.selecionado;
+				celula->temAgua = false;
+				celula->temNavio = true;
+				celula->tamanhoNavio = navio.tamanho;
+				celula->posicaoNavio = i;
+				celula->vertical = navio.vertical;
+				celula->selecionada = navio.selecionado;
 			} else {
-				célula->temÁgua = false;
+				celula->temAgua = false;
 			}
 		}
 	}
 }
 
-void moverNavio(Jogador& jogador, Navio& navio, array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& rodando) {
+void mostrarEstatisticas(Jogador& jogador, int linha, int coluna) {
+	linha -= 1;
+
+	escreverTextoMeio({
+		jogador.nome,
+		"Vencidas: " + to_string(jogador.partidasVencidas) + " | Jogadas: " + to_string(jogador.partidasJogadas),
+		"Acertos: " + to_string(jogador.acertos) + " | Tentativas: " + to_string(jogador.ataques)
+	}, linha, coluna);
+}
+
+void moverNavio(Jogador& jogador, Jogador& adversario, Navio& navio, array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& rodando) {
 	bool girandoNavio = true;
 
 	bool movendoNavio = false;
 
-	int colisõesNavio = 0;
+	int colisoesNavio = 0;
 
 	while (rodando && (girandoNavio || movendoNavio)) {
 		string input = pegarInput();
@@ -444,108 +460,111 @@ void moverNavio(Jogador& jogador, Navio& navio, array<array<Célula, TAMANHO_TAB
 				navio.coluna -= 1;
 			} else if (input == "direita" && navio.coluna < TAMANHO_TABULEIRO - (!navio.vertical ? navio.tamanho : 1)) {
 				navio.coluna += 1;
-			} else if (input == "ok" && colisõesNavio == 0) {
+			} else if (input == "ok" && colisoesNavio == 0) {
 				movendoNavio = false;
 			}
 		}
 
 		limparConsole(false);
 
-		moverCursor(0, 0);
+		moverCursor(1, 1);
 
 		int colunaMeio = colunasTela() / 2;
 
-		int espaçamentoVertical = calcularEspaçamentoVertical(1 + 20 + 1, 1);
+		int espacamentoVertical = calcularEspacamentoVertical(20, 1);
+		int espacamentoHorizontal = calcularEspacamentoHorizontal(40 + 40, 2);
 
-		int espaçamentoHorizontal = calcularEspaçamentoHorizontal(2 + 40 + 2 + 40, 2);
-
-		int linha = espaçamentoVertical;
-		int coluna1 = espaçamentoHorizontal;
-		int coluna2 = espaçamentoHorizontal + 42 + espaçamentoHorizontal;
+		int linha = espacamentoVertical;
+		int coluna1 = espacamentoHorizontal;
+		int coluna2 = espacamentoHorizontal + 40 + espacamentoHorizontal;
 
 		trocarCor(TEXTO_CLARO);
 
-		if (girandoNavio) escreverTextoMeio("O " + jogador.nome + " Deve Girar O Navio", linha / 2, colunaMeio);
-		else escreverTextoMeio("O " + jogador.nome + " Deve Mover O Navio", linha / 2, colunaMeio);
+		escreverTextoMeio("Vez do " + jogador.nome, espacamentoVertical / 2, colunaMeio);
+
+		mostrarEstatisticas(jogador, espacamentoVertical / 2, (jogador.ladoEsquerdo ? coluna1 : coluna2) + (40 / 2));
+		mostrarEstatisticas(adversario, espacamentoVertical / 2, (adversario.ladoEsquerdo ? coluna1 : coluna2) + (40 / 2));
+
+		escreverTextoMeio("O " + jogador.nome + " Deve " + (girandoNavio ? "Girar" : "Mover") + " O Navio", espacamentoVertical + 20 + espacamentoVertical / 2, colunaMeio);
 
 		limparTabuleiro(tabuleiro);
 
-		colocarNavios(jogador.navios, tabuleiro, colisõesNavio, true);
+		colocarNavios(jogador.navios, tabuleiro, colisoesNavio, true);
 
-		if (jogador.lado == "esquerdo") desenharTabuleiro(tabuleiro, linha, coluna1);
-		else desenharTabuleiro(tabuleiro, linha, coluna2);
+		desenharTabuleiro(tabuleiro, linha, jogador.ladoEsquerdo ? coluna1 : coluna2);
 
 		limparTabuleiro(tabuleiro);
 
-		if (jogador.lado == "esquerdo") desenharTabuleiro(tabuleiro, linha, coluna2);
-		else desenharTabuleiro(tabuleiro, linha, coluna1);
+		desenharTabuleiro(tabuleiro, linha, jogador.ladoEsquerdo ? coluna2 : coluna1);
 
 		trocarCor(TEXTO_ESCURO);
 
-		linha = linhasTela() - 2;
-
-		if (girandoNavio) escreverTextoMeio("                 esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]                 ", linha, colunaMeio);
-		else escreverTextoMeio("cima: [CIMA, W] baixo: [BAIXO, S] esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]", linha, colunaMeio);
+		if (girandoNavio) escreverTextoMeio("                 esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]                 ", linhasTela() - 2, colunaMeio);
+		else escreverTextoMeio("cima: [CIMA, W] baixo: [BAIXO, S] esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]", linhasTela() - 2, colunaMeio);
 	}
 }
 
-void moverNavios(Jogador& jogador, array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& rodando) {
+void moverNavios(Jogador& jogador, Jogador& adversario, array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& rodando) {
 	if (!rodando) {
 		return;
 	}
 
 	for (int n = 0; n < QUANTIDADE_NAVIOS; n++) {
-		Navio navioTemporário;
+		Navio navioTemporario;
 
-		navioTemporário.linha = 0;
-		navioTemporário.coluna = 0;
+		navioTemporario.linha = 0;
+		navioTemporario.coluna = 0;
 
-		navioTemporário.tamanho = QUANTIDADE_NAVIOS - n + 1;
+		navioTemporario.tamanho = QUANTIDADE_NAVIOS - n + 1;
 
-		navioTemporário.vertical = true;
+		navioTemporario.vertical = true;
 
-		jogador.navios.push_back(navioTemporário);
+		jogador.navios.push_back(navioTemporario);
 
 		Navio& navio = jogador.navios[jogador.navios.size() - 1];
 
 		navio.selecionado = true;
 
-		moverNavio(jogador, navio, tabuleiro, rodando);
+		moverNavio(jogador, adversario, navio, tabuleiro, rodando);
 
 		navio.selecionado = false;
 	}
 }
 
-void colocarBombas(vector<Bomba>& bombas, array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& colisãoBomba) {
-	colisãoBomba = false;
+void colocarBombas(vector<Bomba>& bombas, array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& colisaoBomba) {
+	colisaoBomba = false;
 
 	for (Bomba& bomba : bombas) {
-		Célula& célula = tabuleiro[bomba.linha][bomba.coluna];
+		Celula& celula = tabuleiro[bomba.linha][bomba.coluna];
 
-		if (célula.temBomba) {
-			colisãoBomba = true;
+		if (celula.temBomba) {
+			colisaoBomba = true;
 
-			célula.temColisão = true;
+			celula.temColisao = true;
 		}
 
-		célula.temBomba = true;
+		celula.temBomba = true;
 
-		célula.selecionada = bomba.selecionada;
+		celula.selecionada = bomba.selecionada;
 	}
 }
 
-void jogarTurno(Jogador& jogador, Jogador& adversário, Jogador& vencedor, array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& rodando, int célulasNavio) {
-	Bomba bombaTemporária = {0, 0, true};
+void jogarTurno(Jogador& jogador, Jogador& adversario, Jogador& vencedor, array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro, bool& rodando, int celulasNavio) {
+	if (!rodando) {
+		return;
+	}
 
-	jogador.bombas.push_back(bombaTemporária);
+	Bomba bombaTemporaria = {0, 0, true};
+
+	jogador.bombas.push_back(bombaTemporaria);
 
 	Bomba& bomba = jogador.bombas.back();
 
 	bool movendoBomba = true;
 
-	bool colisãoBomba = false;
+	bool colisaoBomba = false;
 
-	int colisõesNavio = 0;
+	int colisoesNavio = 0;
 
 	bomba.selecionada = true;
 
@@ -564,69 +583,78 @@ void jogarTurno(Jogador& jogador, Jogador& adversário, Jogador& vencedor, array
 			bomba.coluna -= 1;
 		} else if (input == "direita" && bomba.coluna < TAMANHO_TABULEIRO - 1) {
 			bomba.coluna += 1;
-		} else if (input == "ok" && !colisãoBomba) {
+		} else if (input == "ok" && !colisaoBomba) {
 			movendoBomba = false;
+
+			jogador.ataques = jogador.bombas.size();
+			jogador.acertos = colisoesNavio;
 		}
 
 		limparConsole(false);
 
-		moverCursor(0, 0);
+		moverCursor(1, 1);
 
 		int colunaMeio = colunasTela() / 2;
 
-		int espaçamentoVertical = calcularEspaçamentoVertical(1 + 20 + 1, 1);
-		int espaçamentoHorizontal = calcularEspaçamentoHorizontal(2 + 40 + 2 + 40, 2);
+		int espacamentoVertical = calcularEspacamentoVertical(20, 1);
+		int espacamentoHorizontal = calcularEspacamentoHorizontal(40 + 40, 2);
 
-		int linha = espaçamentoVertical;
-		int coluna1 = espaçamentoHorizontal;
-		int coluna2 = espaçamentoHorizontal + 42 + espaçamentoHorizontal;
+		int linha = espacamentoVertical;
+		int coluna1 = espacamentoHorizontal;
+		int coluna2 = espacamentoHorizontal + 40 + espacamentoHorizontal;
 
 		trocarCor(TEXTO_CLARO);
 
-		escreverTextoMeio("O " + jogador.nome + " Deve Colocar Uma Bomba No Tabuleiro Do " + adversário.nome, linha / 2, colunaMeio);
+		escreverTextoMeio("Vez do " + jogador.nome, espacamentoVertical / 2, colunaMeio);
+
+		mostrarEstatisticas(jogador, espacamentoVertical / 2, (jogador.ladoEsquerdo ? coluna1 : coluna2) + (40 / 2));
+		mostrarEstatisticas(adversario, espacamentoVertical / 2, (adversario.ladoEsquerdo ? coluna1 : coluna2) + (40 / 2));
+
+		escreverTextoMeio("O " + jogador.nome + " Deve Colocar Uma Bomba No Tabuleiro Do " + adversario.nome, espacamentoVertical + 20 + espacamentoVertical / 2, colunaMeio);
 
 		limparTabuleiro(tabuleiro);
 
-		colocarBombas(adversário.bombas, tabuleiro, colisãoBomba);
+		colocarBombas(adversario.bombas, tabuleiro, colisaoBomba);
 
-		colocarNavios(jogador.navios, tabuleiro, colisõesNavio, true);
+		colocarNavios(jogador.navios, tabuleiro, colisoesNavio, true);
 
-		if (jogador.lado == "esquerdo") desenharTabuleiro(tabuleiro, linha, coluna1);
-		else desenharTabuleiro(tabuleiro, linha, coluna2);
+		desenharTabuleiro(tabuleiro, linha, jogador.ladoEsquerdo ? coluna1 : coluna2);
 
 		limparTabuleiro(tabuleiro);
 
-		colocarBombas(jogador.bombas, tabuleiro, colisãoBomba);
+		colocarBombas(jogador.bombas, tabuleiro, colisaoBomba);
 
-		colocarNavios(adversário.navios, tabuleiro, colisõesNavio, false);
+		colocarNavios(adversario.navios, tabuleiro, colisoesNavio, false);
 
-		if (jogador.lado == "esquerdo") desenharTabuleiro(tabuleiro, linha, coluna2);
-		else desenharTabuleiro(tabuleiro, linha, coluna1);
-
-		if (colisõesNavio == célulasNavio && !movendoBomba) {
-			rodando = false;
-
-			vencedor = adversário;
-		}
+		desenharTabuleiro(tabuleiro, linha, jogador.ladoEsquerdo ? coluna2 : coluna1);
 
 		trocarCor(TEXTO_ESCURO);
 
-		linha = linhasTela() - 2;
+		escreverTextoMeio("cima: [CIMA, W] baixo: [BAIXO, S] esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]", linhasTela() - 2, colunasTela() / 2);
 
-		escreverTextoMeio("cima: [CIMA, W] baixo: [BAIXO, S] esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]", linha, colunasTela() / 2);
+		if (colisoesNavio == celulasNavio && !movendoBomba) {
+			rodando = false;
+
+			vencedor = jogador;
+
+			jogador.partidasVencidas += 1;
+
+			jogador.partidasJogadas += 1;
+			adversario.partidasJogadas += 1;
+		}
 	}
 
 	bomba.selecionada = false;
 }
 
-void mostrarVencedor(Jogador& jogador, Jogador& adversário, Jogador& vencedor, array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro) {
+void mostrarVencedor(Jogador& jogador1, Jogador& jogador2, Jogador& vencedor, array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO>& tabuleiro) {
 	limparConsole(true);
 
 	bool rodando = true;
 
-	bool colisãoBomba = false;
+	bool colisaoBomba = false;
 
-	int colisõesNavio = 0;
+	int colisoesNavio = 0;
 
 	while (rodando) {
 		string input = pegarInput();
@@ -639,45 +667,40 @@ void mostrarVencedor(Jogador& jogador, Jogador& adversário, Jogador& vencedor, 
 
 		limparConsole(false);
 
-		moverCursor(0, 0);
+		moverCursor(1, 1);
 
 		int colunaMeio = colunasTela() / 2;
 
-		int espaçamentoVertical = calcularEspaçamentoVertical(1 + 20 + 1, 1);
+		int espacamentoVertical = calcularEspacamentoVertical(20, 1);
 
-		int espaçamentoHorizontal = calcularEspaçamentoHorizontal(2 + 40 + 2 + 40, 2);
+		int espacamentoHorizontal = calcularEspacamentoHorizontal(40 + 40, 2);
 
-		int linha = espaçamentoVertical;
-		int coluna1 = espaçamentoHorizontal;
-		int coluna2 = espaçamentoHorizontal + 42 + espaçamentoHorizontal;
+		int linha = espacamentoVertical;
+		int coluna1 = espacamentoHorizontal;
+		int coluna2 = espacamentoHorizontal + 40 + espacamentoHorizontal;
 
 		trocarCor(TEXTO_CLARO);
 
-		escreverTextoMeio(jogador.nome + " Vencedor", linha / 2, colunaMeio);
+		escreverTextoMeio("O " + vencedor.nome + " Venceu de " + to_string(vencedor.acertos) + " a " + to_string((vencedor.nome == jogador1.nome ? jogador2 : jogador1).acertos) + "!", espacamentoVertical / 2, colunaMeio);
+
+		mostrarEstatisticas(jogador1, espacamentoVertical / 2, (jogador1.ladoEsquerdo ? coluna1 : coluna2) + (40 / 2));
+		mostrarEstatisticas(jogador2, espacamentoVertical / 2, (jogador2.ladoEsquerdo ? coluna1 : coluna2) + (40 / 2));
 
 		limparTabuleiro(tabuleiro);
 
-		colocarBombas(adversário.bombas, tabuleiro, colisãoBomba);
+		colocarBombas(jogador2.bombas, tabuleiro, colisaoBomba);
 
-		colocarNavios(jogador.navios, tabuleiro, colisõesNavio, true);
+		colocarNavios(jogador1.navios, tabuleiro, colisoesNavio, true);
 
-		if (jogador.lado == "esquerdo") {
-			desenharTabuleiro(tabuleiro, linha, coluna1);
-		} else {
-			desenharTabuleiro(tabuleiro, linha, coluna2);
-		}
+		desenharTabuleiro(tabuleiro, linha, jogador1.ladoEsquerdo ? coluna1 : coluna2);
 
 		limparTabuleiro(tabuleiro);
 
-		colocarBombas(jogador.bombas, tabuleiro, colisãoBomba);
+		colocarBombas(jogador1.bombas, tabuleiro, colisaoBomba);
 
-		colocarNavios(adversário.navios, tabuleiro, colisõesNavio, true);
+		colocarNavios(jogador2.navios, tabuleiro, colisoesNavio, true);
 
-		if (jogador.lado == "esquerdo") {
-			desenharTabuleiro(tabuleiro, linha, coluna2);
-		} else {
-			desenharTabuleiro(tabuleiro, linha, coluna1);
-		}
+		desenharTabuleiro(tabuleiro, linha, jogador1.ladoEsquerdo ? coluna2 : coluna1);
 
 		trocarCor(TEXTO_ESCURO);
 
@@ -685,44 +708,81 @@ void mostrarVencedor(Jogador& jogador, Jogador& adversário, Jogador& vencedor, 
 	}
 }
 
+void lerArquivo(string nome, Jogador& jogador) {
+	ifstream arquivo;
+
+	arquivo.open(nome, ios::in);
+
+	if (!arquivo.is_open()) return;
+
+	string linha;
+
+	while (getline(arquivo, linha)) {
+		size_t coluna1 = linha.find(jogador.nome);
+		if (coluna1 == string::npos) continue;
+
+		size_t coluna2 = linha.find(";", coluna1 + 1);
+		if (coluna2 == string::npos) continue;
+
+		size_t coluna3 = linha.find(";", coluna2 + 1);
+		if (coluna3 == string::npos) continue;
+
+		jogador.partidasVencidas = stoi(linha.substr(coluna2 + 1, coluna3 - (coluna2 + 1)));
+		jogador.partidasJogadas = stoi(linha.substr(coluna3 + 1));
+	}
+}
+
+void salvarArquivo(string nome, Jogador& jogador1, Jogador& jogador2) {
+	ofstream arquivo;
+
+	arquivo.open(nome, ios::out | ios::trunc);
+
+	if (!arquivo.is_open()) return;
+
+	arquivo << "Jogador;Partidas Vencidas;Partidas Jogadas\n";
+	arquivo << jogador1.nome << ";" << jogador1.partidasVencidas << ";" << jogador1.partidasJogadas << "\n";
+	arquivo << jogador2.nome << ";" << jogador2.partidasVencidas << ";" << jogador2.partidasJogadas << "\n";
+
+	arquivo.close();
+}
+
 void mostrarJogo() {
 	limparConsole(true);
 
-	Jogador jogador1;
-	Jogador jogador2;
+	Jogador jogador1 = {"Jogador 1", {}, {}, true, 0, 0};
+	Jogador jogador2 = {"Jogador 2", {}, {}, false, 0, 0};
 
-	jogador1.nome = "Jogador 1";
-	jogador2.nome = "Jogador 2";
+	string arquivo = "dados.csv";
 
-	jogador1.navios = {};
-	jogador2.navios = {};
+	lerArquivo(arquivo, jogador1);
+	lerArquivo(arquivo, jogador2);
 
-	jogador1.lado = "esquerdo";
-	jogador2.lado = "direito";
+	salvarArquivo(arquivo, jogador1, jogador2);
 
-	array<array<Célula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO> tabuleiro;
+	array<array<Celula, TAMANHO_TABULEIRO>, TAMANHO_TABULEIRO> tabuleiro;
 
-	int célulasNavio = 0;
+	int celulasNavio = 0;
 
 	for (int n = 0; n < QUANTIDADE_NAVIOS; n++) {
-		célulasNavio += QUANTIDADE_NAVIOS - n + 1;
+		celulasNavio += QUANTIDADE_NAVIOS - n + 1;
 	}
 
 	bool rodando = true;
 
-	moverNavios(jogador1, tabuleiro, rodando);
-	moverNavios(jogador2, tabuleiro, rodando);
+	moverNavios(jogador1, jogador2, tabuleiro, rodando);
+	moverNavios(jogador2, jogador1, tabuleiro, rodando);
 
-	Jogador vencedor;
-
-	vencedor.nome = "";
+	Jogador vencedor = {""};
 
 	while (rodando) {
-		jogarTurno(jogador1, jogador2, vencedor, tabuleiro, rodando, célulasNavio);
-		jogarTurno(jogador2, jogador1, vencedor, tabuleiro, rodando, célulasNavio);
+		jogarTurno(jogador1, jogador2, vencedor, tabuleiro, rodando, celulasNavio);
+		jogarTurno(jogador2, jogador1, vencedor, tabuleiro, rodando, celulasNavio);
+
 	}
 
 	if (vencedor.nome != "") {
+		salvarArquivo(arquivo, jogador1, jogador2);
+		
 		mostrarVencedor(jogador1, jogador2, vencedor, tabuleiro);
 	}
 }
@@ -743,13 +803,13 @@ void mostrarCreditos() {
 
 		limparConsole(false);
 
-		moverCursor(0, 0);
+		moverCursor(1, 1);
 
 		int alturaTexto = 18;
 
-		int espaçamentoVertical = calcularEspaçamentoVertical(alturaTexto, 1);
+		int espacamentoVertical = calcularEspacamentoVertical(alturaTexto, 1);
 
-		int linha = espaçamentoVertical;
+		int linha = espacamentoVertical;
 		int colunaMeio = colunasTela() / 2;
 
 		trocarCor(TEXTO);
@@ -790,6 +850,14 @@ void mostrarCreditos() {
 int main() {
 	SetConsoleOutputCP(65001);
 
+	Jogador jogador1 = {"Jogador 1", {}, {}, true, 0, 0, 0, 0};
+	Jogador jogador2 = {"Jogador 2", {}, {}, false, 0, 0, 0, 0};
+
+	string arquivo = "dados.csv";
+
+	lerArquivo(arquivo, jogador1);
+	lerArquivo(arquivo, jogador2);
+
 	limparConsole(true);
 
 	bool rodando = true;
@@ -817,11 +885,11 @@ int main() {
 	
 		limparConsole(false);
 
-		moverCursor(0, 0);
+		moverCursor(1, 1);
 
-		int espaçamentoVertical = calcularEspaçamentoVertical(8 + 1 + 8 + 1, 2);
+		int espacamentoVertical = calcularEspacamentoVertical(8 + 1 + 8 + 1, 2);
 
-		int linha = espaçamentoVertical;
+		int linha = espacamentoVertical;
 		int colunaMeio = colunasTela() / 2;
 
 		trocarCor(TEXTO_AZUL);
@@ -846,27 +914,25 @@ int main() {
 			"░░░░░    ░░░░░  ░░░░░░░░    ░░░░░     ░░░░░░░░ ░░░░░ "
 		}, linha, colunaMeio);
 
-		linha += espaçamentoVertical;
+		linha += espacamentoVertical;
 
-		int espaçamentoHorizontal = calcularEspaçamentoHorizontal(0, 3);
+		int espacamentoHorizontal = calcularEspacamentoHorizontal(0, 3);
 
-		int coluna = espaçamentoHorizontal;
+		int coluna = espacamentoHorizontal;
 
-		desenharBotão("REGRAS", selecionado == 0, linha, coluna);
+		desenharBotao("REGRAS", selecionado == 0, linha, coluna);
 
-		coluna += espaçamentoHorizontal;
+		coluna += espacamentoHorizontal;
 		
-		desenharBotão("JOGAR", selecionado == 1, linha, coluna);
+		desenharBotao("JOGAR", selecionado == 1, linha, coluna);
 
-		coluna += espaçamentoHorizontal;
+		coluna += espacamentoHorizontal;
 
-		desenharBotão("CRÉDITOS", selecionado == 2, linha, coluna);
+		desenharBotao("CRÉDITOS", selecionado == 2, linha, coluna);
 
 		trocarCor(TEXTO_ESCURO);
 
-		linha = linhasTela() - 2;
-
-		escreverTextoMeio("esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]", linha, colunaMeio);
+		escreverTextoMeio("esquerda: [ESQUERDA, A] direita: [DIREITA, D] ok: [ENTER, ESPAÇO] sair: [ESC]", linhasTela() - 2, colunaMeio);
 	}
 
 	return 0;

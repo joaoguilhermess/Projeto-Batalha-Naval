@@ -80,10 +80,10 @@ void moverCursor(int linha, int coluna) {
 	SetConsoleCursorInfo(console, &info);
 }
 
-void trocarCor(int color) {
+void trocarCor(int cor) {
 	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	SetConsoleTextAttribute(console, color);
+	SetConsoleTextAttribute(console, cor);
 }
 
 int linhasTela() {
